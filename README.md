@@ -6,6 +6,9 @@ headline ticker. Built with [Bubble Tea](https://github.com/charmbracelet/bubble
 [Lip Gloss](https://github.com/charmbracelet/lipgloss), and
 [gopsutil](https://github.com/shirou/gopsutil).
 
+
+![WUP screenshot](/assets/screenshot.png)
+
 ## Install
 
 Once you've published a release to your tap (see `packaging/`), install on any
