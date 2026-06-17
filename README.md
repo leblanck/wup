@@ -1,6 +1,6 @@
 # wup
 
-A "start my day" terminal homepage: live system metrics, quick-launch links,
+A "wake-up" terminal homepage: live system metrics, quick-launch links,
 local weather (wttr.in), and a Hacker News top-10 watchlist with a scrolling
 headline ticker. Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea),
 [Lip Gloss](https://github.com/charmbracelet/lipgloss), and
