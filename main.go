@@ -268,6 +268,37 @@ func openStoryCmd(s hnStory) tea.Cmd {
 	}
 }
 
+// openConfigCmd opens config.json for editing. If $VISUAL/$EDITOR is set, the
+// dashboard is suspended while that editor runs in-place, and the config is
+// reloaded when it exits. Otherwise the file opens in the OS default app.
+func openConfigCmd() tea.Cmd {
+	path := resolvedConfigPath
+	if path == "" {
+		return func() tea.Msg { return statusMsg{"✗ config path unknown"} }
+	}
+	editor := os.Getenv("VISUAL")
+	if editor == "" {
+		editor = os.Getenv("EDITOR")
+	}
+	if editor != "" {
+		return tea.ExecProcess(exec.Command(editor, path), func(err error) tea.Msg {
+			if err != nil {
+				return statusMsg{fmt.Sprintf("✗ editor error: %v", err)}
+			}
+			if rerr := loadConfig(path); rerr != nil {
+				return statusMsg{fmt.Sprintf("✗ reload failed: %v", rerr)}
+			}
+			return statusMsg{"✓ config reloaded"}
+		})
+	}
+	return func() tea.Msg {
+		if err := opener(path).Start(); err != nil {
+			return statusMsg{fmt.Sprintf("✗ couldn't open config: %v", err)}
+		}
+		return statusMsg{"→ opened config · restart to apply"}
+	}
+}
+
 // ============================================================================
 // MODEL
 // ============================================================================
@@ -358,7 +389,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "enter":
-			if m.focus == focusLinks && len(links) > 0 {
+			if m.focus == focusLinks && m.linkSel < len(links) {
 				return m, openLinkCmd(links[m.linkSel])
 			}
 			if m.focus == focusHN && m.hnSel < len(m.stories) {
@@ -368,6 +399,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			m.status = "refreshing…"
 			return m, tea.Batch(fetchWeather(), fetchHN())
+		case "e":
+			return m, openConfigCmd()
 		default:
 			// number shortcuts 1-9 open the corresponding link
 			if len(msg.String()) == 1 {
@@ -783,7 +816,7 @@ func (m model) View() string {
 		)
 	}
 
-	help := dimStyle.Render("tab focus · ↑↓ move · enter open · 1-9 launch · r refresh · q quit")
+	help := dimStyle.Render("tab focus · ↑↓ move · enter open · 1-9 launch · e edit · r refresh · q quit")
 	meta := dimStyle.Render(fmt.Sprintf("wx %s · hn %s", ago(m.weatherAt), ago(m.hnAt)))
 	footer := help + "    " + meta
 	if m.status != "" {
@@ -807,6 +840,13 @@ func main() {
 	if err := loadConfig(*configFlag); err != nil {
 		fmt.Fprintln(os.Stderr, "wup: config error:", err)
 		os.Exit(1)
+	}
+
+	// Best-effort: ask the terminal to resize to the configured size. One-shot,
+	// so the user can resize freely afterward. Ignored by terminals that don't
+	// support CSI 8 t and by tmux.
+	if windowForceSize {
+		fmt.Printf("\x1b[8;%d;%dt", windowRows, windowCols)
 	}
 
 	p := tea.NewProgram(newModel(), tea.WithAltScreen())

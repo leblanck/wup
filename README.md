@@ -51,10 +51,17 @@ go build -o wup .
 | `↑`/`↓` or `k`/`j` | move selection in the focused panel |
 | `enter`    | open the selected link / story            |
 | `1`–`9`    | quick-launch the corresponding link       |
+| `e`        | edit config.json (uses `$EDITOR`, else opens in default app) |
 | `r`        | force-refresh weather + Hacker News        |
 | `q` / `esc` / `ctrl-c` | quit                          |
 
 Metrics refresh every second, weather every 15 minutes, HN every 5 minutes.
+
+Pressing `e` opens your `config.json`. If `$VISUAL` or `$EDITOR` is set, wup
+suspends, opens the file in that editor, and reloads the config when you quit —
+so link and budget changes take effect immediately (interval and window-size
+changes still need a restart). Without `$EDITOR`, the file opens in your default
+app and changes apply on the next launch.
 
 ## Configuration
 

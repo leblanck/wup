@@ -39,6 +39,9 @@ var (
 	weatherEvery    time.Duration
 	hnEvery         time.Duration
 	hnCount         int
+	windowForceSize bool
+	windowCols      int
+	windowRows      int
 )
 
 // ============================================================================
@@ -61,6 +64,14 @@ type fileConfig struct {
 		RefreshMinutes int `json:"refresh_minutes"`
 		Count          int `json:"count"` // how many top stories to show (1-30)
 	} `json:"hackernews"`
+	Window struct {
+		// ForceSize asks the terminal to resize to Cols x Rows at launch via
+		// the CSI 8 t escape sequence. Best-effort: some terminals ignore it,
+		// and it has no effect inside tmux. You can still resize freely after.
+		ForceSize bool `json:"force_size"`
+		Cols      int  `json:"cols"`
+		Rows      int  `json:"rows"`
+	} `json:"window"`
 	Links []linkConfig `json:"links"`
 }
 
@@ -71,6 +82,9 @@ func defaultFileConfig() fileConfig {
 	c.Weather.RefreshMinutes = 15
 	c.HackerNews.RefreshMinutes = 5
 	c.HackerNews.Count = 10
+	c.Window.ForceSize = true
+	c.Window.Cols = 125
+	c.Window.Rows = 35
 	c.Links = []linkConfig{
 		{Name: "Gmail", Kind: "url", Target: "https://mail.google.com"},
 		{Name: "Calendar", Kind: "url", Target: "https://calendar.google.com"},
@@ -111,6 +125,10 @@ func configPath(override string) (string, error) {
 	return filepath.Join(base, "wup", "config.json"), nil
 }
 
+// resolvedConfigPath holds the path loadConfig actually used, so the in-app
+// "edit config" shortcut knows which file to open.
+var resolvedConfigPath string
+
 // loadConfig reads the config file, seeding a default one on first run if it
 // doesn't exist yet. A malformed file is treated as a hard error so you notice.
 func loadConfig(override string) error {
@@ -118,6 +136,7 @@ func loadConfig(override string) error {
 	if err != nil {
 		return err
 	}
+	resolvedConfigPath = path
 
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -179,6 +198,14 @@ func applyConfig(c fileConfig) {
 		hnCount = 30
 	default:
 		hnCount = c.HackerNews.Count
+	}
+
+	windowForceSize = c.Window.ForceSize
+	if windowCols = c.Window.Cols; windowCols <= 0 {
+		windowCols = 125
+	}
+	if windowRows = c.Window.Rows; windowRows <= 0 {
+		windowRows = 35
 	}
 
 	links = links[:0]
