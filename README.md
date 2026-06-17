@@ -24,8 +24,6 @@ brew upgrade --cask wup     # update to the latest release
 brew uninstall --cask wup   # remove
 ```
 
-Replace `YOURUSER` with your GitHub username.
-
 ## Build from source
 
 From the `wup/` directory:
