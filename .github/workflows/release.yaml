@@ -10,7 +10,10 @@ permissions:
 
 jobs:
   goreleaser:
-    runs-on: ubuntu-latest
+    # macOS runner is required: the darwin build uses cgo (for gopsutil CPU
+    # metrics), which can't be cross-compiled from Linux. Linux targets still
+    # cross-compile fine from here since they're built with cgo off.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:

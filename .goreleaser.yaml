@@ -9,10 +9,27 @@ version: 2
 project_name: wup
 
 builds:
-  - env:
-      - CGO_ENABLED=0
+  # macOS: CGO is REQUIRED — gopsutil reads CPU times via a cgo call
+  # (host_processor_info). Without it the CPU metric is stuck at 0. This means
+  # the darwin builds must run on a macOS runner (see the workflow).
+  - id: darwin
+    env:
+      - CGO_ENABLED=1
     goos:
       - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+  # Linux: gopsutil reads /proc/stat (pure Go), so cgo can stay off and these
+  # cross-compile fine from the macOS runner.
+  - id: linux
+    env:
+      - CGO_ENABLED=0
+    goos:
       - linux
     goarch:
       - amd64
@@ -30,13 +47,13 @@ archives:
 homebrew_casks:
   - name: wup
     repository:
-      owner: leblanck
+      owner: YOURUSER
       name: homebrew-tap
       # Cross-repo push needs a PAT with contents:write on the tap repo,
       # stored as the Actions secret below (NOT the default GITHUB_TOKEN).
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     # directory defaults to "Casks"; binary name defaults to the cask name.
-    homepage: "https://github.com/leblanck/wup"
+    homepage: "https://github.com/YOURUSER/wup"
     description: "Terminal homepage dashboard: metrics, links, weather, Hacker News"
     # The binary isn't signed/notarized, so strip the quarantine attribute on
     # install — otherwise macOS says "wup is damaged and cannot be opened".
