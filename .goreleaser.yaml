@@ -1,7 +1,9 @@
 # Automated alternative to release.sh + manual formula edits.
 # Install goreleaser (brew install goreleaser), then tagging a release does
 # everything: builds binaries, creates the GitHub release, and writes the
-# updated formula into your tap repo.
+# generated cask into your tap repo.
+#
+# NOTE: place this file at the REPO ROOT (.goreleaser.yaml), not in packaging/.
 version: 2
 
 project_name: wup
@@ -23,18 +25,24 @@ builds:
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
-brews:
+# Homebrew casks replaced the deprecated `brews` block (GoReleaser v2.16+).
+# Casks are how Homebrew expects pre-compiled binaries to be distributed.
+homebrew_casks:
   - name: wup
     repository:
       owner: leblanck
       name: homebrew-tap
-      # needs a PAT with repo scope, stored as the secret below
+      # Cross-repo push needs a PAT with contents:write on the tap repo,
+      # stored as the Actions secret below (NOT the default GITHUB_TOKEN).
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Formula
+    # directory defaults to "Casks"; binary name defaults to the cask name.
     homepage: "https://github.com/leblanck/wup"
     description: "Terminal homepage dashboard: metrics, links, weather, Hacker News"
-    license: "MIT"
-    install: |
-      bin.install "wup"
-    test: |
-      assert_predicate bin/"wup", :exist?
+    # The binary isn't signed/notarized, so strip the quarantine attribute on
+    # install — otherwise macOS says "wup is damaged and cannot be opened".
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/wup"]
+          end
