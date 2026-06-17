@@ -1,0 +1,40 @@
+# Automated alternative to release.sh + manual formula edits.
+# Install goreleaser (brew install goreleaser), then tagging a release does
+# everything: builds binaries, creates the GitHub release, and writes the
+# updated formula into your tap repo.
+version: 2
+
+project_name: wup
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+brews:
+  - name: wup
+    repository:
+      owner: leblanck
+      name: homebrew-tap
+      # needs a PAT with repo scope, stored as the secret below
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/leblanck/wup"
+    description: "Terminal homepage dashboard: metrics, links, weather, Hacker News"
+    license: "MIT"
+    install: |
+      bin.install "wup"
+    test: |
+      assert_predicate bin/"wup", :exist?
