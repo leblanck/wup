@@ -47,13 +47,13 @@ archives:
 homebrew_casks:
   - name: wup
     repository:
-      owner: YOURUSER
+      owner: leblanck
       name: homebrew-tap
       # Cross-repo push needs a PAT with contents:write on the tap repo,
       # stored as the Actions secret below (NOT the default GITHUB_TOKEN).
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     # directory defaults to "Casks"; binary name defaults to the cask name.
-    homepage: "https://github.com/YOURUSER/wup"
+    homepage: "https://github.com/leblanck/wup"
     description: "Terminal homepage dashboard: metrics, links, weather, Hacker News"
     # The binary isn't signed/notarized, so strip the quarantine attribute on
     # install — otherwise macOS says "wup is damaged and cannot be opened".
